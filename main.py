@@ -105,7 +105,6 @@ def text_to_speech(text, output_path="result.mp3"):
     input=text
     )
     response.stream_to_file(output_path)
-    # return StreamingResponse(file, media_type="audio/mpeg")
     return output_path
 
 @app.post("/uploadfile/")
