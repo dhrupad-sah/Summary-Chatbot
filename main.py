@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 import requests
-
+from fastapi.responses import FileResponse
 import openai
 from openai import OpenAI
 import json
@@ -25,19 +25,29 @@ async def read_root():
 
 @app.post("/talk")
 async def post_audio(file: UploadFile):
-    user_message = transcribe_audio(file);
+    file_location = f"temp/{file.filename}"
+    with open(file_location, "wb") as buffer:
+        buffer.write(await file.read())
+    user_message = transcribe_audio(file_location);
     chat_response = get_chat_response(user_message);
     audio_output = text_to_speech(chat_response);
-    
-    return chat_response;
 
-def transcribe_audio(file):
+    response = FileResponse(audio_output, media_type='audio/mpeg', filename='response.mp3')
+
+    os.remove(file_location)
+
+    def clean_up():
+        os.remove(audio_output)
+    
+    return response
+
+def transcribe_audio(file_path):
     client = OpenAI()
-    audio_file = open(file.filename, "rb")
-    transcript = client.audio.transcriptions.create(
-        model="whisper-1",
-        file=audio_file
-    )
+    with open(file_path, "rb") as audio_file: 
+        transcript = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
     print(transcript.text)
     return transcript.text
 
@@ -87,52 +97,16 @@ def save_messages(user_message, gpt_response):
     with open(file, 'w') as f:
         json.dump(messages, f)
 
-def text_to_speech(text):
+def text_to_speech(text, output_path="result.mp3"):
     client = OpenAI()
-
     response = client.audio.speech.create(
     model="tts-1",
     voice="nova",
     input=text
     )
-    
-    response.stream_to_file("result.mp3")
-
-    
-    
-    
-        # voice_id = '21m00Tcm4TlvDq8ikWAM'
-        # body =    {
-        #             "text": text,
-        #             "model_id": "eleven_monolingual_v1",
-        #             "voice_settings": {
-        #                 "stability": 0,
-        #                 "similarity_boost": 0,
-        #                 "style": 0.5,
-        #                 "use_speaker_boost": True
-        #             }
-        #           }
-        
-        # headers = {
-        #             "Content-Type": "application/json",
-        #             "accept": "audio/mpeg",
-        #             "xi-api-key": elevenlabs_key
-        #           }
-        # url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-
-        # try:
-        #     response = requests.post(url, json=body, headers=headers)
-        #     if response.status_code==200:
-        #         with open("audio_file.mp3", "wb") as file:
-        #             file.write(response.content)
-        #         return response.content
-        #     else:
-        #         return{"Something went wrong"}
-            
-        # except Exception as e:
-        #     print(e)
-  
-
+    response.stream_to_file(output_path)
+    # return StreamingResponse(file, media_type="audio/mpeg")
+    return output_path
 
 @app.post("/uploadfile/")
 async def create_upload_file(file: UploadFile):
