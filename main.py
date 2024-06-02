@@ -38,6 +38,9 @@ async def post_audio(file: UploadFile):
 
     def clean_up():
         os.remove(audio_output)
+        
+    with open('database.json', 'w') as file:
+        file.truncate(0)
     
     return response
 
