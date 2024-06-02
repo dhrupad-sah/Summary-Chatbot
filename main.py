@@ -42,7 +42,20 @@ async def post_audio(file: UploadFile):
     with open('database.json', 'w') as file:
         file.truncate(0)
     
-    return {response,chat_response}
+    return response
+
+@app.post("/text")
+async def post_audio(file: UploadFile):
+    file_location = f"temp/{file.filename}"
+    with open(file_location, "wb") as buffer:
+        buffer.write(await file.read())
+    user_message = transcribe_audio(file_location);
+    chat_response = get_chat_response(user_message);
+        
+    with open('database.json', 'w') as file:
+        file.truncate(0)
+    
+    return chat_response
 
 def transcribe_audio(file_path):
     client = OpenAI()
