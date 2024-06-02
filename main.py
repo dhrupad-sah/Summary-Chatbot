@@ -99,7 +99,7 @@ def load_messages():
 
     else:
         messages.append({
-            "role": "system", "content": "This is a conversation between 2 people talking in a meeting. The first line is the first person the second line is the second person, third line is again the first one and so on. Give me a detailed summary of the conversation."
+            "role": "system", "content": "This is a conversation among people talking in a meeting. The first line is the first person the second line is the second person, third line is again the first one and so on. Give me a detailed summary of the conversation."
         })
 
     return messages
